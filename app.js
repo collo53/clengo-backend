@@ -10,6 +10,9 @@ const { connectDB } = require('./config/db');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const customersRouter = require('./routes/customers');
+const jobRouter = require('./routes/job');
+
+
 const app = express();
 
 // ======================================
@@ -33,7 +36,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
-app.use('/api/v1',customersRouter);
+app.use('/api/customer',customersRouter);
+app.use('/api/jobs', jobRouter);
 
 
 app.use((req, res, next) => {

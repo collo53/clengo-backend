@@ -6,6 +6,9 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { create } = require('domain');
+const jwt = require('jsonwebtoken');
+const JWT_SECRET="bc78717fa8f545e181b03ec042938d5b0497478b2eccd33c39db57c15d94e302";
+const JWT_EXPIRES_IN="30d";
 
 
 // MULTER CONFIGURATION for file uploads
@@ -119,63 +122,109 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password required.' });
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required',
+      });
     }
 
-    // Find user by email
-    const [rows] = await pool.query('SELECT * FROM user WHERE email = ?', [email]);
-    if (rows.length === 0) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    const query = `
+      SELECT 
+        id,
+        firstName,
+        lastName,
+        email,
+        passwordHash,
+        role,
+        phone,
+        isAvailable,
+        suspended,
+        balance,
+        profilePicUrl,
+        updatedAt
+      FROM user
+      WHERE email = ?
+      LIMIT 1;
+    `;
+
+  const [rows] = await pool.query(query, [email]);
+const user = rows[0];
+
+if (!user) {
+  return res.status(401).json({
+    success: false,
+    message: 'Invalid email or password',
+  });
+}
+
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin account required.',
+      });
     }
 
-    const user = rows[0];
-    const storedPassword = user.passwordHash; 
-
-    let isMatch = false;
-
-    if (storedPassword && storedPassword.startsWith('$2')) {
-      isMatch = await bcrypt.compare(password, storedPassword);
-    } else {
-      isMatch = password === storedPassword;
+    if (user.suspended) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account suspended. Contact support.',
+      });
     }
 
+    // FIXED password field name
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
     }
 
-    if (!storedPassword.startsWith('$2')) {
-      const newHash = await bcrypt.hash(password, 10);
-      await pool.query('UPDATE user SET passwordHash = ? WHERE id = ?', [newHash, user.id]);
-      console.log(`Upgraded ${email} password to bcrypt hash`);
-    }
+    const tokenPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+    };
+
+  const token = jwt.sign(
+  tokenPayload,
+  JWT_SECRET,
+  { expiresIn: JWT_EXPIRES_IN }
+);
+
+
+    // FIXED field mappings
+    const responseUser = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+      isAvailable: user.isAvailable,
+      suspended: user.suspended,
+      balance: Number(user.balance || 0),
+      profilePicUrl: user.profilePicUrl,
+      updatedAt: user.updatedAt,
+    };
 
     return res.status(200).json({
       success: true,
-      message: 'Login successful.',
-      user: {
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        phone: user.phone,
-        profilePicUrl: user.profilePicUrl,
-        isAvailable: user.isAvailable,
-        Suspended: user.suspended,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        
-      },
+      message: 'Login successful',
+      token,
+      user: responseUser,
     });
 
   } catch (err) {
-    console.error('Login error:', err);
-    return res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    console.error('Error in loginAdmin:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to login. Please try again.',
+    });
   }
 });
-
-
-router.get("/users", async (req, res) => {
+router.get("/getusers", async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT id, email, firstName, lastName, phone, dob, address, profilePicUrl, 
@@ -277,7 +326,7 @@ router.put("/update/:id", upload.single("profilePic"), async (req, res) => {
     res.status(200).json({ success: true, message: "User updated successfully" });
 
   } catch (err) {
-    console.error("❌ Error updating user:", err);
+    console.error(" Error updating user:", err);
     res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 });
