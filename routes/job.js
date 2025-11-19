@@ -4,16 +4,18 @@ const { pool } = require('../config/db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { createJob } = require('../controllers/job.creation');
-const { getJob } = require('../controllers/job.all');
-const { getJobbyId } = require('../controllers/job.byId');
-const { updateJob } = require('../controllers/job.update');
-const { deleteJob } = require('../controllers/job.delete');
-const { assignCleaner } = require('../controllers/job.assign');
-const { updateJobStatus } = require('../controllers/job.status');
-const { reverseJob } = require('../controllers/job.reverse');
-const { paymentRecord } = require('../controllers/job.payment');
+const { 
+  getJob,
+  createJob,
+  getJobbyId,
+  assignCleaner,
+  deleteJob,
+  paymentRecord,
+  reverseJob,
+  updateJobStatus,
+  updateJob
 
+ } = require('../controllers/jobs.controller');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

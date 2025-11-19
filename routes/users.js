@@ -9,13 +9,14 @@ const { create } = require('domain');
 const jwt = require('jsonwebtoken');
 const JWT_SECRET="bc78717fa8f545e181b03ec042938d5b0497478b2eccd33c39db57c15d94e302";
 const JWT_EXPIRES_IN="30d";
-const { loginAdmin } = require('../controllers/auth.controller');
-const {registerUser} = require('../controllers/registration.controller');
-const {getAllUsers} = require('../controllers/users.all.js');
-const { getUserbyId } = require('../controllers/users.byid.js');
-const { updateUser } = require('../controllers/update.user.js');
-const { deleteUser } = require('../controllers/delete.user.js');
-
+const {
+  loginAdmin,
+  registerUser,
+  getAllUsers,
+  getUserbyId,
+  updateUser,
+  deleteUser
+} = require('../controllers/users.controller');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
