@@ -6,7 +6,8 @@ const {
     registerCustomer,
     getCustomer,
     getCustomerbyId,
-    deleteCustomer
+    deleteCustomer,
+    updateCustomer,
 
  } = require('../controllers/customers.controller');
 
@@ -16,6 +17,7 @@ const {
 
 router.post('/register', registerCustomer);
 router.get('/getcustomers', getCustomer);
+router.patch('/update/:id', updateCustomer);
 router.get('/:id', getCustomerbyId);
 router.delete("/delete/:id",deleteCustomer);
 

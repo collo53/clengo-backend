@@ -113,6 +113,84 @@ async function getCustomerbyId(req, res) {
   }
 }
 
+async function updateCustomer(req, res) {
+  try {
+    const id = req.params.id.trim();
+
+    const { mobile, address, notes } = req.body;
+
+    const [existing] = await pool.query(
+      "SELECT * FROM customer WHERE id = ?",
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found",
+      });
+    }
+
+    const updateFields = [];
+    const updateValues = [];
+
+    if (mobile) {
+      updateFields.push("mobile = ?");
+      updateValues.push(mobile);
+    }
+
+    if (address) {
+      updateFields.push("address = ?");
+      updateValues.push(JSON.stringify(address));
+    }
+
+    if (notes) {
+      updateFields.push("notes = ?");
+      updateValues.push(JSON.stringify(notes));
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No fields provided for update",
+      });
+    }
+
+    updateFields.push("updatedAt = NOW(3)");
+
+    const updateQuery = `
+        UPDATE customer
+        SET ${updateFields.join(", ")}
+        WHERE id = ?
+    `;
+
+    updateValues.push(id);
+
+    await pool.query(updateQuery, updateValues);
+
+    const [updated] = await pool.query(
+      `SELECT id, firstName, surname, mobile, updatedAt
+       FROM customer
+       WHERE id = ?`,
+      [id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: updated[0],
+      message: "Customer updated successfully",
+    });
+
+  } catch (err) {
+    console.error(" Error updating customer:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while updating customer",
+      error: err.message,
+    });
+  }
+}
+
 async function deleteCustomer(req, res) {
 
   try {
@@ -142,4 +220,5 @@ module.exports ={
     getCustomer,
     getCustomerbyId,
     registerCustomer,
+    updateCustomer,
 };

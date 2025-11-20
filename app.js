@@ -11,6 +11,8 @@ const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const customersRouter = require('./routes/customers');
 const jobRouter = require('./routes/job');
+const transactionsRouter = require('./routes/transactions');
+const payoutRouter = require('./routes/payout');
 
 
 const app = express();
@@ -38,6 +40,8 @@ app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/customer',customersRouter);
 app.use('/api/jobs', jobRouter);
+app.use('/api/transactions', transactionsRouter);
+app.use('/api/payout', payoutRouter);
 
 
 app.use((req, res, next) => {
